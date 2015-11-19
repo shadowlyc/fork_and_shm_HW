@@ -67,11 +67,8 @@ int main(int argc, char *argv[])
 
     struct data usr_input[50];
 
-    shm_id = shm_open("text_buff", O_RDONLY, S_IRUSR | S_IWUSR);
-    shm_flag = shm_open("flag_buff", O_RDONLY, S_IRUSR | S_IWUSR);
-
-    ftruncate(shm_id, sizeof(struct data));
-    ftruncate(shm_flag, 8);
+    shm_id = shm_open("text_buff", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+    shm_flag = shm_open("flag_buff", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
 
     shm_addr = (struct data * )mmap(NULL, sizeof(struct data), PROT_READ | PROT_WRITE, MAP_SHARED, shm_id, 0);
     flag_ptr = (int* )mmap(NULL, 8, PROT_READ | PROT_WRITE, MAP_SHARED, shm_flag, 0);
