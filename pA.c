@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <fcntl.h>
-#define SIZE 50
+#define SIZE 4096
 
 // struct 裡面存有 user 輸入的整數、二進位字串、1的個數
 struct data
@@ -20,7 +20,7 @@ struct data
 
 int main()
 {
-    key_t key = 1235; // shm key
+    key_t key; // shm key
     int shm_id = 0;
     int shm_flag;
     int* flag_ptr;
@@ -28,13 +28,13 @@ int main()
     shm_flag_buff 旗標控制暫存，程式自己暫存share memory內的flag用
     shm_flag_buff[0]:process flag : 0 server_input process, 1 client process, 2 server_print process
     */
-    int shm_flag_buff[1]={0};
+    int shm_flag_buff[2]={0,0};
 
     struct data *shm_addr; // pointer to shm
     pid_t pid;
     char shm_strid[10];
     
-    struct data usr_input[100];
+    struct data usr_input[50];
 
     // share memory建立與控制
     shm_id = shm_open("text_buff", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);

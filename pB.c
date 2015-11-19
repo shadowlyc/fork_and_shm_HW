@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <fcntl.h>
-#define SIZE 50
+#define SIZE 4096
 
 struct data
 {
@@ -55,7 +55,7 @@ struct data * findMatch(struct data *_list, int num, int list_count){
 
 int main(int argc, char *argv[])
 {
-    key_t key = 1235; // shm key
+    key_t key; // shm key
     int shm_id = 0;
     int shm_flag;
     int* flag_ptr;
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
     int struct_count = 0;
     int shm_flag_buff[1]={0};
 
-    struct data usr_input[100];
+    struct data usr_input[50];
 
     shm_id = shm_open("text_buff", O_RDONLY, S_IRUSR | S_IWUSR);
     shm_flag = shm_open("flag_buff", O_RDONLY, S_IRUSR | S_IWUSR);
