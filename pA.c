@@ -26,9 +26,10 @@ int main()
     int* flag_ptr;
     /*
     shm_flag_buff 旗標控制暫存，程式自己暫存share memory內的flag用
-    shm_flag_buff[0]:process flag : 0 server_input process, 1 client process, 2 server_print process
+    shm_flag_buff[0]:process flag : 0->server_input, 1->client, 2->server_print, 3->input -3 as end
+    shm_flag_buff[1]:
     */
-    int shm_flag_buff[2]={0,0};
+    int shm_flag_buff[2]={0,1};
 
     struct data *shm_addr; // pointer to shm
     pid_t pid;
@@ -78,46 +79,51 @@ int main()
         for (q = 0; q < 2; q++) {
             shm_flag_buff[q] = flag_ptr[q];
         }
-        while(shm_flag_buff[0] == 0){ // flag = 0 時只能執行 input_parent
-            printf("Enter a number: ");
-            scanf("%d",&usr_input->u_in);
-            char pt[10];
-            if(usr_input->u_in == -1 || usr_input->u_in == -2){
-                memset(shm_addr,3,1);
-                control = 3;
-            }
-            sprintf(pt,"%d",usr_input->u_in); // 把輸入的整數轉成字串，用以更新 shm
-            memcpy(shm_addr+1,pt,sizeof(usr_input->u_in));
-                     
-            shm_flag_buff[0] = 1; // go to child process
-            int q;
-            for(q=0;q<2;q++){ // update the flag to shm
-                flag_ptr[q] = shm_flag_buff[q];
-            }
-        }
-        while(shm_flag_buff[0] == 2){ // flag = 2 時只能執行 print_parent
-            memcpy(str_control,shm_addr,4); // 把 control 拿出來，確認要 print 的東西
-            control = atoi(str_control);
-            if(control == 2){ // normal input 的 print
-                char change[10];
-                memcpy(change,shm_addr+1,sizeof(shm_addr));
-                printf("%d:%s;\n", usr_input->u_in,change);
-                memset(shm_addr,1,1);
-            }else{ // print -1 or -2 的結果
-                struct data last[sizeof(shm_addr)];
-                memcpy(last,shm_addr+1,sizeof(shm_addr));
-                int j;
-                for(j=0;j<sizeof(last);j++){
-                    printf("%d:%s; ",last[j].u_in,last[j].bin);
+        while(shm_flag_buff[1] == 1){
+            if(shm_flag_buff[0] == 0){ 
+                printf("Enter a number: ");
+                scanf("%d",&usr_input->u_in);
+                char pt[10];
+                if(usr_input->u_in == -1 || usr_input->u_in == -2){
+                    memset(shm_addr,3,1);
+                    control = 3;
                 }
-                printf("\n");
+                sprintf(pt,"%d",usr_input->u_in); // 把輸入的整數轉成字串，用以更新 shm
+                memcpy(shm_addr+1,pt,sizeof(usr_input->u_in));
+                         
+                shm_flag_buff[0] = 1; // go to child process
+                int q;
+                for(q=0;q<2;q++){ // update the flag to shm
+                    flag_ptr[q] = shm_flag_buff[q];
+                }
             }
-            shm_flag_buff[0] = 0; // back to parent_input process
-            int q;
-            for(q=0;q<2;q++){ // update the flag to shm
-                flag_ptr[q] = shm_flag_buff[q];
+            else if(shm_flag_buff[0] == 2){ 
+                memcpy(str_control,shm_addr,4); // 把 control 拿出來，確認要 print 的東西
+                control = atoi(str_control);
+                if(control == 2){ // normal input 的 print
+                    char change[10];
+                    memcpy(change,shm_addr+1,sizeof(shm_addr));
+                    printf("%d:%s;\n", usr_input->u_in,change);
+                    memset(shm_addr,1,1);
+                }else{ // print -1 or -2 的結果
+                    struct data last[sizeof(shm_addr)];
+                    memcpy(last,shm_addr+1,sizeof(shm_addr));
+                    int j;
+                    for(j=0;j<sizeof(last);j++){
+                        printf("%d:%s; ",last[j].u_in,last[j].bin);
+                    }
+                    printf("\n");
+                }
+                shm_flag_buff[0] = 0; // back to parent_input process
+                int q;
+                for(q=0;q<2;q++){ // update the flag to shm
+                    flag_ptr[q] = shm_flag_buff[q];
+                }
+                
             }
-            
+            else{
+                shm_flag_buff[1] = 0;
+            }
         }
         
         shmdt(shm_addr);
