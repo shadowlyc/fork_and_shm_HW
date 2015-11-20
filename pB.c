@@ -15,7 +15,6 @@ struct data   // 與 shm 共用的 struct
     int u_in;
     char bin[SIZE];
     char allstr[SIZE];
-    int quan;
     int flag;
 };
 
@@ -72,6 +71,12 @@ int main(int argc, char *argv[])
     int execute_key = 1; // 判斷如果 pB 收到的字是 -3 就設回 0
     struct pBonly cal[50];
 
+    // 初始化 pointer
+    int *enter = &shm_addr->u_in;
+    char *binary = shm_addr->bin;
+    char *strres = shm_addr->allstr;
+
+
     shm_id = shm_open("text_buff", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
 
     shm_addr = (struct data * )mmap(NULL, sizeof(struct data), PROT_READ | PROT_WRITE, MAP_SHARED, shm_id, 0);
@@ -89,8 +94,8 @@ int main(int argc, char *argv[])
 
     while(execute_key){
         if(shm_addr->flag == 1){
-            t = shm_addr->u_in; // 從 shm 拿出 parent 存的資料
-            cal[struct_count].num = shm_addr->u_in;
+            t = *enter; // 從 shm 拿出 parent 存的資料
+            cal[struct_count].num = *enter;
             count = 0; // 每次都要重置 count
             i = 0;
             // 十轉二
@@ -110,8 +115,8 @@ int main(int argc, char *argv[])
             int j;
             for(j=i-1;j>=0;j--){ // 把二進位轉過來印
                 cal[struct_count].oz[i-j-1] = d2b[j];
-                shm_addr->bin[i-j-1] = d2b[j];
             }
+            strcpy(binary, cal[struct_count].oz);
             struct_count++;
             shm_addr->flag = 2; // 運算完畢，flag 設為 2 請 pA 印出字串
         }
@@ -123,7 +128,7 @@ int main(int argc, char *argv[])
             for(i=0;i<struct_count;i++){
                 if(cal[i].many == max){
                     result = match(cal[i].num, cal[i].oz);
-                    strcat(shm_addr->allstr,result);
+                    strcat(strres,result);
                 }
             }
             shm_addr->flag = 6; // 運算完畢，flag 設為 6 請 pA 印出多筆組合
@@ -136,7 +141,7 @@ int main(int argc, char *argv[])
             for(i=0;i<struct_count;i++){
                 if(cal[i].many == min){
                     result = match(cal[i].num, cal[i].oz);
-                    strcat(shm_addr->allstr,result);
+                    strcat(strres,result);
                 }
             }
             shm_addr->flag = 6; // 運算完畢，flag 設為 6 請 pA 印出多筆組合

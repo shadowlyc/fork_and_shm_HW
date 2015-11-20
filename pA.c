@@ -10,13 +10,12 @@
 #include <fcntl.h>
 #define SIZE 4096
 
-// struct 裡面存有 user 輸入的整數、二進位字串、1的個數、flag
+// struct 裡面存有 user 輸入的整數、二進位字串、flag
 struct data
 {
     int u_in;
     char bin[SIZE];
     char allstr[SIZE]; // 專門給 -1,-2 印多筆資料用
-    int quan;
     int flag;
     /* flag 說明如下
     1: 有使用者輸入數值
@@ -56,7 +55,12 @@ int main()
         return 0;
     }
 
-
+    int i;
+    for (i = 0;i < sizeof(struct data);i++) {
+        shm_addr->bin[i] = '\0';
+        shm_addr->allstr[i] = '\0';
+        shm_addr->u_in = 0;
+    }
 
     // fork another process
     pid = fork();
@@ -71,6 +75,7 @@ int main()
         sleep(3);
         shm_addr->flag = 0;
         while(execute_key){
+
             if(shm_addr->flag == 0){ // 只有 flag 為 0 時，使用者才能輸入數值
                 printf("Enter a number: ");
                 scanf("%d",&shm_addr->u_in);
