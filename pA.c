@@ -93,7 +93,7 @@ int main()
                 }
             }
             else if(shm_addr->flag == 2){
-                printf("%d:%s;\n", shm_addr->u_in, shm_addr->bin);
+                printf("%s\n", shm_addr->bin);
                 shm_addr->flag = 0;
             }
             else if(shm_addr->flag == 6){ // 印出多筆組合
