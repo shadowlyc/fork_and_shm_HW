@@ -72,7 +72,7 @@ int main()
         printf("2. 輸入 -1 會印出二進位字串中，'1'的數量最多的數字\n");
         printf("3. 輸入 -2 會印出二進位字串中，'1'的數量最少的數字\n");
         printf("4. 輸入 -3 則代表程式結束。\n\n稍後即可開始輸入\n\n");
-        sleep(3);
+        sleep(1);
         shm_addr->flag = 0;
         while(execute_key){
 

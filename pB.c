@@ -49,10 +49,10 @@ int findMin(struct pBonly *_list, int bmin, int list_count){
 
 // 組合答案
 char *match(int pn, char *bn){
-    char *sn;
+    char *sn = malloc(sizeof(char *) * 10);
     sprintf(sn,"%d",pn);
     int ll = strlen(sn) + strlen(bn);
-    char *result = (char *)malloc(sizeof(char) * ll);
+    char *result = (char *)malloc(sizeof(char) * (ll+4));
     strcpy(result, sn);
     strcat(result, ":");
     strcat(result, bn);
@@ -71,11 +71,6 @@ int main(int argc, char *argv[])
     int execute_key = 1; // 判斷如果 pB 收到的字是 -3 就設回 0
     struct pBonly cal[50];
 
-    // 初始化 pointer
-    int *enter = &shm_addr->u_in;
-    char *binary = shm_addr->bin;
-    char *strres = shm_addr->allstr;
-
 
     shm_id = shm_open("text_buff", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
 
@@ -91,6 +86,10 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    // 初始化 pointer
+    int *enter = &shm_addr->u_in;
+    char *binary = shm_addr->bin;
+    char *strres = shm_addr->allstr;
 
     while(execute_key){
         if(shm_addr->flag == 1){
@@ -122,27 +121,47 @@ int main(int argc, char *argv[])
             shm_addr->flag = 2; // 運算完畢，flag 設為 2 請 pA 印出字串
         }
         else if(shm_addr->flag == 3){ // 當輸入為 -1
+            int k;
+            for(k=0;k<strlen(strres);k++){
+                strres[k]='\0';
+            }
             int max = cal[0].many;
-            int i;
-            char *result;
+            int i, j=0;
+            char *result = malloc(sizeof(char) * 50);
             max = findMax(cal,max,struct_count);
             for(i=0;i<struct_count;i++){
                 if(cal[i].many == max){
+                    j++;
                     result = match(cal[i].num, cal[i].oz);
-                    strcat(strres,result);
+                    if(j == 1){
+                        strcpy(strres,result);
+                    }
+                    else{
+                        strcat(strres,result);
+                    }
                 }
             }
+            free(result);
             shm_addr->flag = 6; // 運算完畢，flag 設為 6 請 pA 印出多筆組合
         }
         else if(shm_addr->flag == 4){ // 當輸入為 -2
+            int k;
+            for(k=0;k<strlen(strres);k++){
+                strres[k]='\0';
+            }
             int min = cal[0].many;
-            int i;
-            char *result;
+            int i, j=0;
+            char *result = malloc(sizeof(char) * 50);;
             min = findMin(cal,min,struct_count);
             for(i=0;i<struct_count;i++){
                 if(cal[i].many == min){
                     result = match(cal[i].num, cal[i].oz);
-                    strcat(strres,result);
+                    if(j == 1){
+                        strcpy(strres,result);
+                    }
+                    else{
+                        strcat(strres,result);
+                    }
                 }
             }
             shm_addr->flag = 6; // 運算完畢，flag 設為 6 請 pA 印出多筆組合
