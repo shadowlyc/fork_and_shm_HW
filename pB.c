@@ -94,8 +94,8 @@ int main(int argc, char *argv[])
 
     while(execute_key){
         if(shm_addr->flag == 1){
-            t = *enter; // 從 shm 拿出 parent 存的資料
-            cal[struct_count].num = *enter;
+            t = shm_addr->u_in; // 從 shm 拿出 parent 存的資料
+            cal[struct_count].num = t;
             count = 0; // 每次都要重置 count
             i = 0;
             // 十轉二
@@ -116,7 +116,8 @@ int main(int argc, char *argv[])
             for(j=i-1;j>=0;j--){ // 把二進位轉過來印
                 cal[struct_count].oz[i-j-1] = d2b[j];
             }
-            strcpy(binary, cal[struct_count].oz);
+            char *result = match(cal[struct_count].num, cal[struct_count].oz);
+            sprintf(shm_addr->bin,"%s",result);
             struct_count++;
             shm_addr->flag = 2; // 運算完畢，flag 設為 2 請 pA 印出字串
         }
