@@ -119,8 +119,9 @@ int main()
         fprintf(stderr, "Fork Failed");
         exit(-1);
     }
-    shmdt(shm_addr);
-    shmctl(shm_id, IPC_RMID, NULL);
-        
+    
+    if (shm_unlink("text_buff") == -1) {
+        printf("Error removing %s\n","text_buff"); exit(-1);
+    }        
     return 0;
 }
