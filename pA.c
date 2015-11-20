@@ -57,10 +57,11 @@ int main()
     }
 
 
+
     // fork another process
     pid = fork();
 
-    if(pid != 0){ // In parent process, pid > 0
+    if(pid > 0){ // In parent process, pid > 0
         
         printf("程式使用說明：\n--------------\n");
         printf("1. 輸入正整數時會印出該整數與其二進位字串\n");
@@ -68,6 +69,7 @@ int main()
         printf("3. 輸入 -2 會印出二進位字串中，'1'的數量最少的數字\n");
         printf("4. 輸入 -3 則代表程式結束。\n\n稍後即可開始輸入\n\n");
         sleep(3);
+        shm_addr->flag = 0;
         while(execute_key){
             if(shm_addr->flag == 0){ // 只有 flag 為 0 時，使用者才能輸入數值
                 printf("Enter a number: ");
@@ -93,7 +95,7 @@ int main()
                 printf("%s\n",shm_addr->allstr);
                 shm_addr->flag = 0;
             }
-            else{ // 輸入為 -3，程式結束
+            else if(shm_addr->flag == 5){ // 輸入為 -3，程式結束
                 execute_key = 0;
                 printf("程式即將結束\n");
             }
