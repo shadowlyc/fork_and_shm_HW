@@ -10,70 +10,73 @@
 #include <fcntl.h>
 #define SIZE 4096
 
-struct data
+struct data   // 與 shm 共用的 struct
 {
     int u_in;
     char bin[SIZE];
+    char allstr[SIZE];
     int quan;
+    int flag;
+};
+
+struct pBonly{ // 從 shm 拿出來的東西，供運算用
+    int num;
+    char oz[SIZE];
+    int many;
+    int Bflag;
 };
 
 // 找最多1
-int findMax(struct data *_list, int bmax, int list_count){
+int findMax(struct pBonly *_list, int bmax, int list_count){
     int j;
     for(j=1;j<list_count;j++){
-        if(_list[j].quan > bmax){
-            bmax = _list[j].quan;
+        if(_list[j].many > bmax){
+            bmax = _list[j].many;
         }
     }
     return bmax;
 }
 
 // 找最少1
-int findMin(struct data *_list, int bmin, int list_count){
+int findMin(struct pBonly *_list, int bmin, int list_count){
     int j;
     for(j=1;j<list_count;j++){
-        if(_list[j].quan < bmin){
-            bmin = _list[j].quan;
+        if(_list[j].many < bmin){
+            bmin = _list[j].many;
         }
     }
     return bmin;
 }
 
-// 找所有符合最多or少1的
-struct data * findMatch(struct data *_list, int num, int list_count){
-    struct data last[10];
-    int k=0, i;
-    for(i=0;i<list_count;i++){
-        if(_list[i].quan == num){
-            last[k] = _list[i];
-            // memcpy(last[k],_list[i],sizeof(_list[i]));
-            k++;
-        }
-    }
-    return last;
+// 組合答案
+char *match(int pn, char *bn){
+    char *sn;
+    sprintf(sn,"%d",pn);
+    int ll = strlen(sn) + strlen(bn);
+    char *result = (char *)malloc(sizeof(char) * ll);
+    strcpy(result, sn);
+    strcat(result, ":");
+    strcat(result, bn);
+    strcat(result, "; ");
+
+    return result;
 }
 
 int main(int argc, char *argv[])
 {
-    key_t key; // shm key
-    int shm_id = 0;
-    int shm_flag;
-    int* flag_ptr;
+    int shm_id;
     struct data *shm_addr; // pointer to shm
     int t, turn, count, i;
     char d2b[SIZE]; // Dec2Bin 暫存
     int struct_count = 0;
-    int shm_flag_buff[2]={0,1};
-
-    struct data usr_input[50];
+    int execute_key = 1; // 判斷如果 pB 收到的字是 -3 就設回 0
+    struct pBonly cal[50];
 
     shm_id = shm_open("text_buff", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
-    shm_flag = shm_open("flag_buff", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
 
     shm_addr = (struct data * )mmap(NULL, sizeof(struct data), PROT_READ | PROT_WRITE, MAP_SHARED, shm_id, 0);
-    flag_ptr = (int* )mmap(NULL, 8, PROT_READ | PROT_WRITE, MAP_SHARED, shm_flag, 0);
 
-    if(shm_id < 0 || shm_flag < 0){
+    if(shm_id < 0){
         perror("shmget error");
         return 0;
     }
@@ -82,67 +85,64 @@ int main(int argc, char *argv[])
         perror("shmat error");
         return 0;
     }
-    char buffer[(SIZE-1)];
-    int control = 1;
-    // 1:user 要輸入值、2: pB 有更新 shm、3: 輸入為-1 or -2，程式結束
 
-    int q;
-    for (q = 0; q < 2; q++) {
-        shm_flag_buff[q] = flag_ptr[q];
-    }
-    while(shm_flag_buff[1] == 1){
-        if(shm_flag_buff[0] == 1){ 
-            memcpy(buffer,shm_addr,sizeof(shm_addr)); // 從 shm 拿出 parent 存的資料
-            control = atoi(&buffer[0]);
-            t = atoi(&buffer[1]); // t 為 user 所輸入的整數
-            if(control == 1){ // user 輸入非 -1,-2 的值
-                count = 0;
-                i = 0;
-                usr_input[struct_count].u_in = t;
-                // 十轉二
-                while(t > 0){
-                    turn = t%2;
-                    if(turn == 1){
-                        d2b[i] = '1';
-                        count++;
-                    }else{
-                        d2b[i] = '0';
-                    }
-                    i++;
-                    t = t/2;
-                }
-                usr_input[struct_count].quan = count; // 存 1 的個數
-                int j;
-                for(j=i-1;j>=0;j--){ // 把二進位轉過來印
-                    usr_input[struct_count].bin[i-j-1] = d2b[j];
-                }
 
-                memset(shm_addr,2,1); // 改變control
-                memcpy(shm_addr+1,usr_input[struct_count].bin,sizeof(usr_input[struct_count].bin)); // 更新 shm，把二進位字串存進去給 A print
-                struct_count++;
-            }
-        
-            else if(control == 3){ // 當輸入為 -1 or -2
-                struct data *final_ans; // 用來存所有符合要搜尋的條件
-                if(t == -1){
-                    int max = usr_input[0].quan;
-                    max = findMax(usr_input,max,struct_count);
-                    final_ans = findMatch(usr_input,max,struct_count);
+    while(execute_key){
+        if(shm_addr->flag == 1){
+            t = shm_addr->u_in; // 從 shm 拿出 parent 存的資料
+            cal[struct_count].num = shm_addr->u_in;
+            count = 0; // 每次都要重置 count
+            i = 0;
+            // 十轉二
+            while(t > 0){
+                turn = t%2;
+                if(turn == 1){
+                    d2b[i] = '1';
+                    count++;
                 }else{
-                    int min = usr_input[0].quan;
-                    min = findMin(usr_input,min,struct_count);
-                    final_ans = findMatch(usr_input,min,struct_count);
+                    d2b[i] = '0';
                 }
-                memcpy(shm_addr+1,final_ans,sizeof(final_ans)); // 把符合的存進 shm 裡
+                i++;
+                t = t/2;
+            } // while 迴圈結束之後，count 裡會存著該整數的'1'個數，d2b 會存反過來的二進位字串
+            cal[struct_count].many = count; // 存 1 的個數
+
+            int j;
+            for(j=i-1;j>=0;j--){ // 把二進位轉過來印
+                cal[struct_count].oz[i-j-1] = d2b[j];
+                shm_addr->bin[i-j-1] = d2b[j];
             }
-            else{ // 輸入為 -3
-                shm_flag_buff[1] = 0;
+            struct_count++;
+            shm_addr->flag = 2; // 運算完畢，flag 設為 2 請 pA 印出字串
+        }
+        else if(shm_addr->flag == 3){ // 當輸入為 -1
+            int max = cal[0].many;
+            int i;
+            char *result;
+            max = findMax(cal,max,struct_count);
+            for(i=0;i<struct_count;i++){
+                if(cal[i].many == max){
+                    result = match(cal[i].num, cal[i].oz);
+                    strcat(shm_addr->allstr,result);
+                }
             }
-            shm_flag_buff[0] = 2; // go to parent_print process
-            int q;
-            for(q=0;q<2;q++){ // update the flag to shm
-                flag_ptr[q] = shm_flag_buff[q];
+            shm_addr->flag = 6; // 運算完畢，flag 設為 6 請 pA 印出多筆組合
+        }
+        else if(shm_addr->flag == 4){ // 當輸入為 -2
+            int min = cal[0].many;
+            int i;
+            char *result;
+            min = findMin(cal,min,struct_count);
+            for(i=0;i<struct_count;i++){
+                if(cal[i].many == min){
+                    result = match(cal[i].num, cal[i].oz);
+                    strcat(shm_addr->allstr,result);
+                }
             }
+            shm_addr->flag = 6; // 運算完畢，flag 設為 6 請 pA 印出多筆組合
+        }
+        else if(shm_addr->flag == 5){ // 輸入為 -3
+            execute_key = 0;
         }
     }
 }
