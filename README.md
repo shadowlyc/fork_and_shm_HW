@@ -8,8 +8,10 @@
 #### 目前問題回報
 
 * 在 pB 如果沒有每行 printf 東西的話會不能跑，非常神祕
+
 圖片支援：http://imgur.com/xD1pxUJ
 
-![wired bug](http://imgur.com/xD1pxUJ)
+* pB 在 -1, -2 時有 bug (match, strres)，修理中！
+
 
 ##### There are lots of bugs Q_Q
